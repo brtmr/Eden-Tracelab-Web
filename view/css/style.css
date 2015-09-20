@@ -1,0 +1,63 @@
+body {
+    font-family: sans-serif;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    text-align: center;
+}
+
+.menu ul{
+    list-style-type: none;
+}
+
+.menu li {
+    padding: 10px;
+    text-align: center;
+    height: 20px;
+    width:200px;
+    display: inline-block;
+    background-color: #dddddd;
+}
+
+.menu li:hover {
+    background-color: #999999;
+}
+
+.axis .tick text {
+    font-size: 8pt;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+.running {
+    fill : #8CED87;
+}
+
+.runnable {
+    fill : #F5FF85;
+}
+
+.idle {
+    fill: #7B84E0;
+}
+
+.blocked {
+    fill: #E87D9C;
+}
+
+svg {
+    margin:0px;
+    display: block;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+canvas {
+    display: block;
+    margin:0px;
+    margin-left:auto;
+    margin-right:auto;
+}

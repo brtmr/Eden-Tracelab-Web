@@ -31,6 +31,33 @@ main = do
     conn <- connect myConnectInfo
     scotty 3000 $ do
         middleware logStdoutDev
+        --for serving the view
+        --index
+        get "/" $ do
+            file "./view/index.html"
+        --javscript stuff
+        get "/js/edentv.js" $ do
+            file "./view/js/edentv.js"
+        get "/js/d3.min.js" $ do
+            file "./view/js/d3.min.js"
+        get "/js/jquery-1.11.3.min.js" $ do
+            file "./view/js/jquery-1.11.3.min.js"
+        get "/js/data.js" $ do
+            file "./view/js/data.js"
+        --css
+        get "/css/style.css" $ do
+            file "./view/css/style.css"
+        --favicons
+        get "/img/favicon-96x96.png" $ do
+            file "./view/img/favicon-96x96.png"
+        get "/img/favicon-196x196.png" $ do
+            file "./view/img/favicon-196x196.png"
+        get "/img/favicon-16x16.png" $ do
+            file "./view/img/favicon-16x16.png"
+        get "/img/favicon-32x32.png" $ do
+            file "./view/img/favicon-32x32.png"
+
+        --JSON API.
         post "/traces" $ do
             traceListAction conn
         post "/mevents" $ do
