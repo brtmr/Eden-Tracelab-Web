@@ -1,4 +1,4 @@
-STATES = [ "#8CED87", "#F5FF85", "#7B84E0", "#E87D9C"]
+STATES = [ "#7B84E0", "#8CED87", "#E87D9C", "#F5FF85"]
 
 MACHINE_VIEW = 1
 PROCESS_VIEW = 2
@@ -47,8 +47,9 @@ $ ->
                 )
 
     load_machine_events_initial = () -> 
+        $('canvas').remove()
+        $('svg').remove()
         #All trace metadata has been loaded, now load the actual trace data.
-        console.log('foobar')
         params = 
             id    : trace_metadata.id
             start : 0
@@ -59,12 +60,13 @@ $ ->
                         if status != "success"
                             alert "failed to load machine events."
                             return
+                        trace_loaded = true;
                         draw_machine_events(data)
                 )
 
     calculate_minimum_duration = (start,end) ->
         total_duration = end-start
-        return Math.floor(total_duration/1300)
+        return Math.floor(total_duration/1300 / 4)
 
     $("#update_button").click update_tracelist
     $("#load_button").click(() -> 
@@ -73,12 +75,18 @@ $ ->
 
     data = dummy_data
     margin =
-        top: 50
-        right: 50
+        top: 10
+        right: 1
         bottom: 50
-        left: 10
+        left: 100
     width = 1300 - margin.left - margin.right
     height = 500 - margin.top - margin.bottom
+
+    draw_process_events = (pevents) -> 
+        return
+
+    draw_thread_events = (tevents) -> 
+        return
 
     draw_machine_events = (mevents) ->
 
@@ -92,7 +100,20 @@ $ ->
             translate = d3.event.translate[0]
             scale     = d3.event.scale
             xAxisContainer.call(xAxis)
-            draw()
+            #get the new minimum and maximum x-coordinates.
+            domain = x.domain()
+            params = 
+                id    : trace_metadata.id
+                start : Math.floor domain[0]
+                end   : Math.floor domain[1]
+                minduration : calculate_minimum_duration(domain[0],domain[1])
+            $.post("/mevents", params, (data, status) -> 
+                        if status != "success"
+                            alert "failed to load machine events."
+                            return
+                        mevents = data
+                        draw()
+                    )
 
         zoom = d3.behavior.zoom()
             .x(x)
@@ -128,16 +149,19 @@ $ ->
                     "translate(#{margin.left},0)")
             .call(xAxis)
 
-        barheight = 0.8 * height / trace_metadata.num_machines
+        barheight = 
+            total   : height / (trace_metadata.num_machines)
+            justbar : 0.85 * height / (trace_metadata.num_machines)
+            idle    : 0.2 * height / (trace_metadata.num_machines)
+        console.log trace_metadata.num_machines
 
         drawEvent = (e) ->
             context.fillStyle = STATES[e[3]]
-            console.log context.fillStyle
             context.fillRect(
                 margin.left + x(e[1]),
-                margin.top + e[0] * height / trace_metadata.num_machines
-                x(e[2]+1),
-                barheight
+                margin.top  + (e[0]-1) * barheight.total
+                x(e[1]+e[2]) - x(e[1]),
+                if e[3]==0 then barheight.idle else barheight.justbar
                 )
 
         drawTickLine = (d) ->
@@ -149,12 +173,19 @@ $ ->
 
         clear = () -> context.clearRect(0, 0, canvas.node().width, canvas.node().height)
 
+        drawMachineName = (num) ->
+            context.fillStyle = "black"
+            context.font = "14px sans-serif";
+            context.fillText("Machine #: #{ num }", 10, (num-1)*barheight.total + 50);
+
         draw = () ->
             ticks = xAxis.scale().ticks(xAxis.ticks()[0])
             clear()
             drawEvent e for e in mevents
             drawTickLine d for d in ticks
-
+            context.fillStyle = "white"
+            context.fillRect(0,0,margin.left,height)
+            drawMachineName n for n in  [1..trace_metadata.num_machines]
         draw()
     return
 

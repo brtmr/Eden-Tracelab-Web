@@ -130,9 +130,9 @@ getMachineEvents :: Connection -> Int -> Int -> Int -> Int ->
 getMachineEvents conn trace_id start end minduration = do
     evs <- query conn [sql|SELECT NUM, STARTTIME, DURATION, STATE FROM (MACHINE_EVENTS JOIN MACHINES
     ON MACHINE_EVENTS.MACHINE_ID = MACHINES.MACHINE_ID)
-    WHERE STARTTIME > ?
-    AND   DURATION  > ?
-    AND   STARTTIME < ?
+    WHERE ? <= (STARTTIME + DURATION)
+    AND   DURATION  >= ?
+    AND   STARTTIME <= ?
     AND   MACHINES.MACHINE_ID in
     (SELECT MACHINE_ID FROM MACHINES WHERE
     TRACE_ID = ?)|] (start, minduration, end, trace_id)
