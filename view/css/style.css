@@ -32,27 +32,12 @@ body {
     shape-rendering: crispEdges;
 }
 
-.running {
-    fill : #8CED87;
-}
-
-.runnable {
-    fill : #F5FF85;
-}
-
-.idle {
-    fill: #7B84E0;
-}
-
-.blocked {
-    fill: #E87D9C;
-}
-
 svg {
     margin:0px;
     display: block;
     margin-left:auto;
     margin-right:auto;
+    float:left;
 }
 
 canvas {
@@ -60,4 +45,11 @@ canvas {
     margin:0px;
     margin-left:auto;
     margin-right:auto;
+    float:left;
+}
+
+#loading {
+    position: absolute;
+    top: 200px;
+    margin-left:300px;
 }

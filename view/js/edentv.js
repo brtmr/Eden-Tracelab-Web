@@ -10,10 +10,12 @@ PROCESS_VIEW = 2;
 THREAD_VIEW = 4;
 
 $(function() {
-  var calculate_minimum_duration, data, draw_machine_events, draw_process_events, draw_thread_events, height, load_machine_events_initial, load_trace_info, margin, populate_options, trace_loaded, trace_metadata, tracelist_data, update_tracelist, width;
+  var calculate_minimum_duration, data, draw_machine_events, draw_process_events, draw_thread_events, jqxhrs, load_machine_events_initial, load_trace_info, mk_height, populate_options, trace_loaded, trace_metadata, tracelist_data, update_tracelist;
+  $("#loading").hide();
   tracelist_data = [];
   trace_metadata = {};
   trace_loaded = false;
+  jqxhrs = [];
   update_tracelist = function() {
     return $.post("/traces", {}, function(data, status) {
       if (status !== "success") {
@@ -88,25 +90,39 @@ $(function() {
     return load_trace_info(id);
   });
   data = dummy_data;
-  margin = {
-    top: 10,
-    right: 1,
-    bottom: 50,
-    left: 100
-  };
-  width = 1300 - margin.left - margin.right;
-  height = 500 - margin.top - margin.bottom;
   draw_process_events = function(pevents) {};
   draw_thread_events = function(tevents) {};
+  mk_height = function(n) {
+    if ((50 * n) > 700) {
+      return 700;
+    } else {
+      return 50 * n;
+    }
+  };
   draw_machine_events = function(mevents) {
-    var barheight, canvas, clear, context, draw, drawEvent, drawMachineName, drawTickLine, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
+    var barheight, canvas, clear, context, draw, drawEvent, drawMachineName, drawTickLine, height, margin, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
+    margin = {
+      top: 10,
+      right: 1,
+      bottom: 50,
+      left: 100
+    };
+    width = 1300 - margin.left - margin.right;
+    height = mk_height(trace_metadata.num_machines) - margin.top - margin.bottom;
     x = d3.scale.linear().domain([0, trace_metadata.duration]).range([0, width]);
     xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10);
     zoomHandler = function() {
-      var domain, params, scale, translate;
+      var domain, jqhxrs, jqxhr, params, scale, translate, _i, _len;
+      console.log(mevents.length);
+      for (_i = 0, _len = jqxhrs.length; _i < _len; _i++) {
+        jqxhr = jqxhrs[_i];
+        jqhxr.abort();
+      }
+      jqhxrs = [];
       translate = d3.event.translate[0];
       scale = d3.event.scale;
       xAxisContainer.call(xAxis);
+      $("#loading").show();
       domain = x.domain();
       params = {
         id: trace_metadata.id,
@@ -114,13 +130,15 @@ $(function() {
         end: Math.floor(domain[1]),
         minduration: calculate_minimum_duration(domain[0], domain[1])
       };
-      return $.post("/mevents", params, function(data, status) {
+      jqxhrs.append = $.post("/mevents", params, function(data, status) {
         if (status !== "success") {
           alert("failed to load machine events.");
           return;
         }
         mevents = data;
-        return draw();
+        jqxhr = null;
+        draw();
+        return $("#loading").hide();
       });
     };
     zoom = d3.behavior.zoom().x(x).on("zoom", zoomHandler);

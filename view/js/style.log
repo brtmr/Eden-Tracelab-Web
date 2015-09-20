@@ -1,11 +1,11 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2015.7.3)  19 JUL 2015 15:47
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013/Debian) (format=pdflatex 2015.9.15)  20 SEP 2015 20:19
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **../css/style.css
 (../css/style.css
 LaTeX2e <2011/06/27>
-Babel <3.9h> and hyphenation patterns for 9 languages loaded.
+Babel <3.9h> and hyphenation patterns for 78 languages loaded.
 
 ! LaTeX Error: Missing \begin{document}.
 
@@ -13,24 +13,24 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.1 h
-     tml, body, div, canvas, svg {
+l.1 b
+     ody {
 ? 
 ! Emergency stop.
  ...                                              
                                                   
-l.1 h
-     tml, body, div, canvas, svg {
+l.1 b
+     ody {
 You're in trouble here.  Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
  
 Here is how much of TeX's memory you used:
- 8 strings out of 494935
- 281 string characters out of 6178123
- 46369 words of memory out of 5000000
- 3338 multiletter control sequences out of 15000+600000
+ 8 strings out of 493304
+ 281 string characters out of 6139871
+ 51880 words of memory out of 5000000
+ 3564 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
- 36 hyphenation exceptions out of 8191
- 5i,0n,4p,49b,14s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 957 hyphenation exceptions out of 8191
+ 5i,0n,4p,25b,14s stack positions out of 5000i,500n,10000p,200000b,80000s
 !  ==> Fatal error occurred, no output PDF file produced!

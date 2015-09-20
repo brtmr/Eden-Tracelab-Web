@@ -5,9 +5,12 @@ PROCESS_VIEW = 2
 THREAD_VIEW  = 4
 
 $ ->
+    $("#loading").hide()
     tracelist_data = []
     trace_metadata = {}
     trace_loaded   = false
+
+    jqxhrs = []
 
     #loads the list of already analyzed traces from the server.
     update_tracelist = () ->
@@ -74,13 +77,6 @@ $ ->
             load_trace_info(id))
 
     data = dummy_data
-    margin =
-        top: 10
-        right: 1
-        bottom: 50
-        left: 100
-    width = 1300 - margin.left - margin.right
-    height = 500 - margin.top - margin.bottom
 
     draw_process_events = (pevents) -> 
         return
@@ -88,7 +84,17 @@ $ ->
     draw_thread_events = (tevents) -> 
         return
 
+    mk_height = (n) ->
+        if (50*n)>700 then 700 else 50*n
+
     draw_machine_events = (mevents) ->
+        margin =
+            top: 10
+            right: 1
+            bottom: 50
+            left: 100
+        width = 1300 - margin.left - margin.right
+        height = mk_height(trace_metadata.num_machines) - margin.top - margin.bottom
 
         x = d3.scale.linear()
             .domain( [0, trace_metadata.duration] )
@@ -97,9 +103,14 @@ $ ->
         xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10)
 
         zoomHandler = () ->
+            console.log mevents.length
+            #is there a previous request?
+            jqhxr.abort() for jqxhr in jqxhrs
+            jqhxrs = []
             translate = d3.event.translate[0]
             scale     = d3.event.scale
             xAxisContainer.call(xAxis)
+            $("#loading").show()
             #get the new minimum and maximum x-coordinates.
             domain = x.domain()
             params = 
@@ -107,13 +118,16 @@ $ ->
                 start : Math.floor domain[0]
                 end   : Math.floor domain[1]
                 minduration : calculate_minimum_duration(domain[0],domain[1])
-            $.post("/mevents", params, (data, status) -> 
+            jqxhrs.append = $.post("/mevents", params, (data, status) -> 
                         if status != "success"
                             alert "failed to load machine events."
                             return
                         mevents = data
+                        jqxhr = null
                         draw()
+                        $("#loading").hide()
                     )
+            return
 
         zoom = d3.behavior.zoom()
             .x(x)
