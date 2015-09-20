@@ -49,12 +49,16 @@ main = do
             file "./view/css/style.css"
         --favicons
         get "/img/favicon-96x96.png" $ do
+            addHeader "Content-type" "image/png"
             file "./view/img/favicon-96x96.png"
         get "/img/favicon-196x196.png" $ do
+            addHeader "Content-type" "image/png"
             file "./view/img/favicon-196x196.png"
         get "/img/favicon-16x16.png" $ do
+            addHeader "Content-type" "image/png"
             file "./view/img/favicon-16x16.png"
         get "/img/favicon-32x32.png" $ do
+            addHeader "Content-type" "image/png"
             file "./view/img/favicon-32x32.png"
 
         --JSON API.
@@ -71,6 +75,24 @@ main = do
             id <- param "id"
             traceInfo <- liftIO $ getTraceInfo conn id
             json $ traceInfo
+        post "/duration" $ do
+            id <- param "id"
+            dur <- liftIO $ getTraceDuration conn id
+            liftIO $ putStrLn $ show dur
+            json $ [dur]
+
+{-
+ - TRACEDURATION SECTION.
+ - -}
+
+getTraceDuration :: Connection -> Int -> IO Int
+getTraceDuration conn trace_id = do
+    dur <- query conn [sql|SELECT MAX(STARTTIME+DURATION) FROM (MACHINE_EVENTS JOIN MACHINES
+        ON MACHINE_EVENTS.MACHINE_ID = MACHINES.MACHINE_ID)
+        WHERE MACHINES.MACHINE_ID IN
+        (SELECT MACHINE_ID FROM MACHINES WHERE
+        TRACE_ID = ?)|] $ Only trace_id
+    return $ (fromOnly.head) dur
 
 {-
  - ## TRACEINFO SECTION ##

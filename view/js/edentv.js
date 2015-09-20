@@ -4,17 +4,60 @@ var STATES;
 STATES = ["#8CED87", "#F5FF85", "#7B84E0", "#E87D9C"];
 
 $(function() {
-  var barheight, canvas, clear, context, data, draw, drawEvent, drawTickLine, height, margin, tracelist_data, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
+  var barheight, canvas, clear, context, data, draw, drawEvent, drawTickLine, height, load_machine_events_initial, load_trace_info, margin, populate_options, trace_loaded, trace_metadata, tracelist_data, update_tracelist, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
   tracelist_data = [];
-  $("#update_button").click(function() {
-    console.log('clicked me');
-    return $.post("http://localhost:3000/traces", {}, function(data, status) {
-      alert(data);
-      return alert(status);
+  trace_metadata = {};
+  trace_loaded = false;
+  update_tracelist = function() {
+    return $.post("/traces", {}, function(data, status) {
+      if (status !== "success") {
+        alert("failed to fetch trace list");
+        return;
+      }
+      tracelist_data = data;
+      return populate_options();
     });
+  };
+  populate_options = function() {
+    var x, _i, _len, _results;
+    $("#trace_list").find("option").remove();
+    _results = [];
+    for (_i = 0, _len = tracelist_data.length; _i < _len; _i++) {
+      x = tracelist_data[_i];
+      _results.push($("#trace_list").append("<option value=\"" + x.id + "\">" + x.filename + "</option>"));
+    }
+    return _results;
+  };
+  load_trace_info = function(id) {
+    return $.post("/traceinfo", {
+      "id": id
+    }, function(data, status) {
+      if (status !== "success") {
+        alert("failed to load trace metadata.");
+        return;
+      }
+      trace_metadata.machines = data;
+      trace_metadata.num_machines = data.length;
+      return $.post("/duration", {
+        "id": id
+      }, function(dur, status) {
+        if (status !== "success") {
+          alert("failed to load trace metadata.");
+          return;
+        }
+        trace_metadata.duration = dur[0];
+        return trace_metadata.id = id;
+      });
+    });
+  };
+  load_machine_events_initial = function() {};
+  $("#update_button").click(update_tracelist);
+  $("#load_button").click(function() {
+    var id;
+    id = $("#trace_list").val();
+    return load_trace_info(id);
   });
-  data = dummy_data;
-  console.log(data.events.length);
+  data = {};
   margin = {
     top: 50,
     right: 50,
