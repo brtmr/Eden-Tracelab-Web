@@ -63,6 +63,7 @@ $(function() {
       });
     });
   };
+  update_tracelist();
   load_machine_events_initial = function() {
     var params;
     $('canvas').remove();
@@ -98,14 +99,14 @@ $(function() {
   draw_process_events = function(pevents) {};
   draw_thread_events = function(tevents) {};
   mk_height = function(n) {
-    if ((50 * n) > 700) {
+    if ((100 * n) > 700) {
       return 700;
     } else {
       return 50 * n;
     }
   };
   draw_machine_events = function(mevents) {
-    var barheight, canvas, clear, context, draw, drawEvent, drawMachineName, drawTickLine, height, margin, timer, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
+    var barheight, canvas, clear, context, draw, drawEvent, drawMachineName, drawTickLine, height, margin, tick_format, timer, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
     margin = {
       top: 10,
       right: 1,
@@ -115,21 +116,27 @@ $(function() {
     width = 1300 - margin.left - margin.right;
     height = mk_height(trace_metadata.num_machines) - margin.top - margin.bottom;
     x = d3.scale.linear().domain([0, trace_metadata.duration]).range([0, width]);
-    xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10);
+    tick_format = function(ns) {
+      var prefix, s;
+      s = ns / 1000000000;
+      prefix = d3.formatPrefix(s);
+      return '' + s + prefix.symbol + 's';
+    };
+    xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10).tickFormat(tick_format);
     timer = null;
     zoomHandler = function() {
-      var scale, translate;
-      if (ui_locked) {
-        return;
-      }
+      var domain;
       if (timer !== null) {
         clearTimeout(timer);
       }
-      translate = d3.event.translate[0];
-      scale = d3.event.scale;
+      domain = x.domain();
+      x.domain(domain);
       xAxisContainer.call(xAxis);
+      if (ui_locked) {
+        return;
+      }
       timer = setTimeout((function(this_zoomevent) {
-        var domain, params;
+        var params;
         ui_locked = true;
         $("#loading").show();
         domain = x.domain();
@@ -152,7 +159,7 @@ $(function() {
       }), ZOOM_TIMEOUT);
       draw();
     };
-    zoom = d3.behavior.zoom().x(x).on("zoom", zoomHandler);
+    zoom = d3.behavior.zoom().x(x).scaleExtent([1, Infinity]).on("zoom", zoomHandler);
     canvas = d3.select("body").append("canvas").attr("width", width + margin.left + margin.right).attr("height", height + margin.top).call(zoom);
     context = canvas.node().getContext("2d");
     canvas.on("mousemove", function() {
@@ -190,6 +197,11 @@ $(function() {
       return context.clearRect(0, 0, canvas.node().width, canvas.node().height);
     };
     drawMachineName = function(num) {
+      var step;
+      step = Math.floor(trace_metadata.num_machines / 32);
+      if (num % step !== 0) {
+        return;
+      }
       context.fillStyle = "black";
       context.font = "14px sans-serif";
       return context.fillText("Machine #: " + num, 0, num * barheight.total + margin.top);

@@ -52,6 +52,8 @@ $ ->
                     )
                 )
 
+    update_tracelist()
+
     load_machine_events_initial = () ->
         $('canvas').remove()
         $('svg').remove()
@@ -89,7 +91,7 @@ $ ->
         return
 
     mk_height = (n) ->
-        if (50*n)>700 then 700 else 50*n
+        if (100*n)>700 then 700 else 50*n
 
     draw_machine_events = (mevents) ->
 
@@ -105,18 +107,23 @@ $ ->
             .domain( [0, trace_metadata.duration] )
             .range( [0, width] )
 
-        xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10)
+        tick_format = (ns) ->
+            s = ns / 1000000000
+            prefix =  d3.formatPrefix(s)
+            return '' + s + prefix.symbol + 's'
+
+        xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10).tickFormat(tick_format)
 
         timer = null
 
         zoomHandler = () ->
-            if ui_locked
-                return
             if timer != null
                 clearTimeout(timer)
-            translate = d3.event.translate[0]
-            scale     = d3.event.scale
+            domain = x.domain()
+            x.domain(domain)
             xAxisContainer.call(xAxis)
+            if ui_locked
+                return
             #get the new minimum and maximum x-coordinates.
             timer = setTimeout(((this_zoomevent) ->
                 ui_locked = on
@@ -142,6 +149,7 @@ $ ->
 
         zoom = d3.behavior.zoom()
             .x(x)
+            .scaleExtent([1, Infinity])
             .on("zoom", zoomHandler)
 
         canvas = d3.select("body").append("canvas")
@@ -198,6 +206,9 @@ $ ->
         clear = () -> context.clearRect(0, 0, canvas.node().width, canvas.node().height)
 
         drawMachineName = (num) ->
+            step = Math.floor(trace_metadata.num_machines / 32)
+            if num%step != 0
+                return
             context.fillStyle = "black"
             context.font = "14px sans-serif";
             context.fillText("Machine #: #{ num }", 0, num*barheight.total + margin.top);
