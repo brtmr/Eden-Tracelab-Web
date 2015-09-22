@@ -156,12 +156,15 @@ $(function() {
       });
     };
     zoomHandler = function() {
-      var domain;
+      var dom, l;
       if (timer !== null) {
         clearTimeout(timer);
       }
-      domain = x.domain();
-      x.domain(domain);
+      dom = x.domain();
+      l = dom[1] - dom[0];
+      if (dom[0] < 0) {
+        zoom.translate([0, 0]);
+      }
       xAxisContainer.call(xAxis);
       if (ui_locked) {
         return;
@@ -169,7 +172,7 @@ $(function() {
       timer = setTimeout(reload, ZOOM_TIMEOUT);
       draw();
     };
-    $("#lod").change(function() {
+    $("#set_lod").click(function() {
       if (timer !== null) {
         clearTimeout(timer);
       }
