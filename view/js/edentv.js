@@ -85,9 +85,10 @@ $(function() {
     });
   };
   calculate_minimum_duration = function(start, end) {
-    var total_duration;
+    var lod, total_duration;
+    lod = $("#lod").val();
     total_duration = end - start;
-    return Math.floor(total_duration / 1300 / 1);
+    return Math.floor(total_duration / 1300 / lod);
   };
   $("#update_button").click(update_tracelist);
   $("#load_button").click(function() {
@@ -106,7 +107,20 @@ $(function() {
     }
   };
   draw_machine_events = function(mevents) {
-    var barheight, canvas, clear, context, draw, drawEvent, drawMachineName, drawTickLine, height, margin, tick_format, timer, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
+    var barheight, canvas, clear, context, draw, drawEvent, drawMachineName, drawTickLine, fake, height, lock_ui, margin, reload, tick_format, timer, unlock_ui, width, x, xAxis, xAxisContainer, xAxisSvg, zoom, zoomHandler;
+    fake = d3.behavior.zoom();
+    lock_ui = function() {
+      $("#loading").show();
+      ui_locked = true;
+      canvas.call(fake);
+      return $("#lod").prop("disabled", true);
+    };
+    unlock_ui = function() {
+      canvas.call(zoom);
+      $("#lod").prop("disabled", false);
+      ui_locked = false;
+      return $("#loading").hide();
+    };
     margin = {
       top: 10,
       right: 1,
@@ -124,6 +138,27 @@ $(function() {
     };
     xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10).tickFormat(tick_format);
     timer = null;
+    reload = function() {
+      var domain, params;
+      lock_ui();
+      domain = x.domain();
+      params = {
+        id: trace_metadata.id,
+        start: Math.floor(domain[0]),
+        end: Math.floor(domain[1]),
+        minduration: calculate_minimum_duration(domain[0], domain[1])
+      };
+      return $.post("/mevents", params, function(data, status) {
+        if (status !== "success") {
+          alert("failed to load machine events.");
+          unlock_ui();
+          return;
+        }
+        mevents = data;
+        draw();
+        return unlock_ui();
+      });
+    };
     zoomHandler = function() {
       var domain;
       if (timer !== null) {
@@ -135,30 +170,15 @@ $(function() {
       if (ui_locked) {
         return;
       }
-      timer = setTimeout((function(this_zoomevent) {
-        var params;
-        ui_locked = true;
-        $("#loading").show();
-        domain = x.domain();
-        params = {
-          id: trace_metadata.id,
-          start: Math.floor(domain[0]),
-          end: Math.floor(domain[1]),
-          minduration: calculate_minimum_duration(domain[0], domain[1])
-        };
-        return $.post("/mevents", params, function(data, status) {
-          if (status !== "success") {
-            alert("failed to load machine events.");
-            return;
-          }
-          mevents = data;
-          draw();
-          $("#loading").hide();
-          return ui_locked = false;
-        });
-      }), ZOOM_TIMEOUT);
+      timer = setTimeout(reload, ZOOM_TIMEOUT);
       draw();
     };
+    $("#lod").change(function() {
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
+      return timer = setTimeout(reload, ZOOM_TIMEOUT);
+    });
     zoom = d3.behavior.zoom().x(x).scaleExtent([1, Infinity]).on("zoom", zoomHandler);
     canvas = d3.select("body").append("canvas").attr("width", width + margin.left + margin.right).attr("height", height + margin.top).call(zoom);
     context = canvas.node().getContext("2d");
@@ -170,9 +190,13 @@ $(function() {
       context.moveTo(cos[0], 0);
       context.lineTo(cos[0], height + margin.top);
       context.stroke();
+      context.fillStyle = "rgba(255,255,255,0.25)";
+      context.fillRect(cos[0] - 10, 0, 20, height + margin.top);
+      context.fillStyle = "white";
+      context.fillRect(cos[0] + 5, cos[1], 120, -20);
       context.fillStyle = "black";
       context.font = "bold 12px sans-serif";
-      return context.fillText(x.invert(cos[0]), cos[0], cos[1]);
+      return context.fillText('' + Math.floor(x.invert(cos[0]) + 0.5) + 'ns', cos[0] + 10, cos[1] - 5);
     });
     xAxisSvg = d3.select("body").append("svg").attr("width", width + margin.left + margin.right).attr("height", margin.bottom).append("g");
     xAxisContainer = xAxisSvg.append("g").attr("class", "axis").attr("transform", "translate(" + margin.left + ",0)").call(xAxis);

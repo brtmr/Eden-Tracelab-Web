@@ -74,8 +74,9 @@ $ ->
                 )
 
     calculate_minimum_duration = (start,end) ->
+        lod = $("#lod").val()
         total_duration = end-start
-        return Math.floor(total_duration/1300 / 1)
+        return Math.floor(total_duration/1300 / lod)
 
     $("#update_button").click update_tracelist
     $("#load_button").click(() ->
@@ -94,6 +95,20 @@ $ ->
         if (100*n)>700 then 700 else 50*n
 
     draw_machine_events = (mevents) ->
+    
+        fake = d3.behavior.zoom()
+
+        lock_ui = () ->
+            $("#loading").show()
+            ui_locked = on
+            canvas.call(fake)
+            $("#lod").prop("disabled", true);
+
+        unlock_ui = () ->
+            canvas.call(zoom)
+            $("#lod").prop("disabled", false);
+            ui_locked = off
+            $("#loading").hide()
 
         margin =
             top: 10
@@ -116,6 +131,24 @@ $ ->
 
         timer = null
 
+        reload = () -> 
+            lock_ui()
+            domain = x.domain()
+            params =
+                id    : trace_metadata.id
+                start : Math.floor domain[0]
+                end   : Math.floor domain[1]
+                minduration : calculate_minimum_duration(domain[0],domain[1])
+            $.post("/mevents", params, (data, status) ->
+                        if status != "success"
+                            alert "failed to load machine events."
+                            unlock_ui()
+                            return
+                        mevents = data
+                        draw()
+                        unlock_ui()
+            )
+
         zoomHandler = () ->
             if timer != null
                 clearTimeout(timer)
@@ -125,27 +158,15 @@ $ ->
             if ui_locked
                 return
             #get the new minimum and maximum x-coordinates.
-            timer = setTimeout(((this_zoomevent) ->
-                ui_locked = on
-                $("#loading").show()
-                domain = x.domain()
-                params =
-                    id    : trace_metadata.id
-                    start : Math.floor domain[0]
-                    end   : Math.floor domain[1]
-                    minduration : calculate_minimum_duration(domain[0],domain[1])
-                $.post("/mevents", params, (data, status) ->
-                            if status != "success"
-                                alert "failed to load machine events."
-                                return
-                            mevents = data
-                            draw()
-                            $("#loading").hide()
-                            ui_locked = off
-                    )
-                ) , ZOOM_TIMEOUT)
+            timer = setTimeout(reload, ZOOM_TIMEOUT)
             draw()
             return
+
+        $("#lod").change(() ->
+            if timer != null
+                clearTimeout(timer)
+            timer = setTimeout(reload, ZOOM_TIMEOUT)
+            )
 
         zoom = d3.behavior.zoom()
             .x(x)
@@ -166,9 +187,15 @@ $ ->
                 context.moveTo(cos[0], 0)
                 context.lineTo(cos[0], height + margin.top)
                 context.stroke()
+
+                context.fillStyle = "rgba(255,255,255,0.25)"
+                context.fillRect(cos[0]-10,0,20,height + margin.top)
+
+                context.fillStyle = "white"
+                context.fillRect(cos[0]+5 ,cos[1], 120 ,-20)
                 context.fillStyle = "black"
                 context.font = "bold 12px sans-serif";
-                context.fillText(x.invert(cos[0]), cos[0], cos[1]);
+                context.fillText('' + Math.floor(x.invert(cos[0])+0.5) + 'ns', cos[0]+10, cos[1]-5);
                 )
 
         xAxisSvg = d3.select("body").append("svg")
@@ -181,6 +208,9 @@ $ ->
             .attr("transform",
                     "translate(#{margin.left},0)")
             .call(xAxis)
+
+
+        ## from here on drawing functions.
 
         barheight =
             total   : height / (trace_metadata.num_machines)
