@@ -4,13 +4,15 @@ MACHINE_VIEW = 1
 PROCESS_VIEW = 2
 THREAD_VIEW  = 4
 
+ZOOM_TIMEOUT = 500
+
+ui_locked = off
+
 $ ->
     $("#loading").hide()
     tracelist_data = []
     trace_metadata = {}
     trace_loaded   = false
-
-    jqxhrs = []
 
     #loads the list of already analyzed traces from the server.
     update_tracelist = () ->
@@ -29,6 +31,7 @@ $ ->
                 "<option value=\"" + x.id + "\">" + x.filename + "</option>") for x in tracelist_data
 
     load_trace_info = (id) ->
+        $("#loading").show()
         #get the trace metadata
         $.post("/traceinfo", { "id" : id },
             (data, status) ->
@@ -49,45 +52,47 @@ $ ->
                     )
                 )
 
-    load_machine_events_initial = () -> 
+    load_machine_events_initial = () ->
         $('canvas').remove()
         $('svg').remove()
         #All trace metadata has been loaded, now load the actual trace data.
-        params = 
+        params =
             id    : trace_metadata.id
             start : 0
             end   : trace_metadata.duration
             minduration : calculate_minimum_duration(0,trace_metadata.duration)
-        $.post("/mevents", params, 
+        $.post("/mevents", params,
                 (data, status)->
                         if status != "success"
                             alert "failed to load machine events."
                             return
                         trace_loaded = true;
                         draw_machine_events(data)
+                        $("#loading").hide()
                 )
 
     calculate_minimum_duration = (start,end) ->
         total_duration = end-start
-        return Math.floor(total_duration/1300 / 4)
+        return Math.floor(total_duration/1300 / 1)
 
     $("#update_button").click update_tracelist
-    $("#load_button").click(() -> 
+    $("#load_button").click(() ->
             id = $("#trace_list").val()
             load_trace_info(id))
 
     data = dummy_data
 
-    draw_process_events = (pevents) -> 
+    draw_process_events = (pevents) ->
         return
 
-    draw_thread_events = (tevents) -> 
+    draw_thread_events = (tevents) ->
         return
 
     mk_height = (n) ->
         if (50*n)>700 then 700 else 50*n
 
     draw_machine_events = (mevents) ->
+
         margin =
             top: 10
             right: 1
@@ -102,31 +107,37 @@ $ ->
 
         xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10)
 
+        timer = null
+
         zoomHandler = () ->
-            console.log mevents.length
-            #is there a previous request?
-            jqhxr.abort() for jqxhr in jqxhrs
-            jqhxrs = []
+            if ui_locked
+                return
+            if timer != null
+                clearTimeout(timer)
             translate = d3.event.translate[0]
             scale     = d3.event.scale
             xAxisContainer.call(xAxis)
-            $("#loading").show()
             #get the new minimum and maximum x-coordinates.
-            domain = x.domain()
-            params = 
-                id    : trace_metadata.id
-                start : Math.floor domain[0]
-                end   : Math.floor domain[1]
-                minduration : calculate_minimum_duration(domain[0],domain[1])
-            jqxhrs.append = $.post("/mevents", params, (data, status) -> 
-                        if status != "success"
-                            alert "failed to load machine events."
-                            return
-                        mevents = data
-                        jqxhr = null
-                        draw()
-                        $("#loading").hide()
+            timer = setTimeout(((this_zoomevent) ->
+                ui_locked = on
+                $("#loading").show()
+                domain = x.domain()
+                params =
+                    id    : trace_metadata.id
+                    start : Math.floor domain[0]
+                    end   : Math.floor domain[1]
+                    minduration : calculate_minimum_duration(domain[0],domain[1])
+                $.post("/mevents", params, (data, status) ->
+                            if status != "success"
+                                alert "failed to load machine events."
+                                return
+                            mevents = data
+                            draw()
+                            $("#loading").hide()
+                            ui_locked = off
                     )
+                ) , ZOOM_TIMEOUT)
+            draw()
             return
 
         zoom = d3.behavior.zoom()
@@ -163,11 +174,10 @@ $ ->
                     "translate(#{margin.left},0)")
             .call(xAxis)
 
-        barheight = 
+        barheight =
             total   : height / (trace_metadata.num_machines)
             justbar : 0.85 * height / (trace_metadata.num_machines)
             idle    : 0.2 * height / (trace_metadata.num_machines)
-        console.log trace_metadata.num_machines
 
         drawEvent = (e) ->
             context.fillStyle = STATES[e[3]]
@@ -190,7 +200,7 @@ $ ->
         drawMachineName = (num) ->
             context.fillStyle = "black"
             context.font = "14px sans-serif";
-            context.fillText("Machine #: #{ num }", 10, (num-1)*barheight.total + 50);
+            context.fillText("Machine #: #{ num }", 0, num*barheight.total + margin.top);
 
         draw = () ->
             ticks = xAxis.scale().ticks(xAxis.ticks()[0])
@@ -198,7 +208,7 @@ $ ->
             drawEvent e for e in mevents
             drawTickLine d for d in ticks
             context.fillStyle = "white"
-            context.fillRect(0,0,margin.left,height)
+            context.fillRect(0,0,margin.left,margin.top + height + margin.bottom)
             drawMachineName n for n in  [1..trace_metadata.num_machines]
         draw()
     return
