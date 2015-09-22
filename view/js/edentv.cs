@@ -1,10 +1,7 @@
 STATES = [ "#7B84E0", "#8CED87", "#E87D9C", "#F5FF85"]
-
-MACHINE_VIEW = 1
-PROCESS_VIEW = 2
-THREAD_VIEW  = 4
-
 ZOOM_TIMEOUT = 500
+WIDTH  = 1300
+HEIGHT = 700
 
 ui_locked = off
 
@@ -76,7 +73,7 @@ $ ->
     calculate_minimum_duration = (start,end) ->
         lod = $("#lod").val()
         total_duration = end-start
-        return Math.floor(total_duration/1300 / lod)
+        return Math.floor(total_duration/ WIDTH / lod)
 
     $("#update_button").click update_tracelist
     $("#load_button").click(() ->
@@ -85,17 +82,11 @@ $ ->
 
     data = dummy_data
 
-    draw_process_events = (pevents) ->
-        return
-
-    draw_thread_events = (tevents) ->
-        return
-
     mk_height = (n) ->
-        if (100*n)>700 then 700 else 50*n
+        if (200*n)>HEIGHT then HEIGHT else 50*n
 
+    # machine event section
     draw_machine_events = (mevents) ->
-    
         fake = d3.behavior.zoom()
 
         lock_ui = () ->
@@ -115,7 +106,7 @@ $ ->
             right: 1
             bottom: 50
             left: 100
-        width = 1300 - margin.left - margin.right
+        width = WIDTH - margin.left - margin.right
         height = mk_height(trace_metadata.num_machines) - margin.top - margin.bottom
 
         x = d3.scale.linear()
