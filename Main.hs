@@ -74,6 +74,13 @@ main = do
             minduration <- param "minduration"
             evs <- liftIO $ getMachineEvents conn id start end minduration
             json $ evs
+        post "/pevents" $ do
+            id       <- param "id"
+            start    <- param "start"
+            end      <- param "end"
+            minduration <- param "minduration"
+            evs <- liftIO $ getProcessEvents conn id start end minduration
+            json $ evs
         post "/traceinfo" $ do
             id <- param "id"
             traceInfo <- liftIO $ getTraceInfo conn id
@@ -141,6 +148,23 @@ getMachineEvents conn trace_id start end minduration = do
     TRACE_ID = ?)|] (start, minduration, end, trace_id)
     return evs
 
+getProcessEvents :: Connection -> Int -> Int -> Int -> Int ->
+    IO [(Int,Int,Int,Int,Int)]
+getProcessEvents conn trace_id start end minduration = do
+    evs <- query conn [sql|SELECT MACHINE_NUM, PROCESS_NUM, STARTTIME, DURATION, STATE FROM
+        PROCESS_EVENTS JOIN
+            (SELECT MACHINE_NUM, PROCESS_NUM, PROCESS_ID FROM
+            (SELECT NUM AS PROCESS_NUM, PROCESS_ID, MACHINE_ID FROM PROCESSES) P
+            JOIN
+            (SELECT NUM AS MACHINE_NUM, MACHINE_ID FROM MACHINES WHERE
+            TRACE_ID = ?) M
+            ON P.MACHINE_ID = M.MACHINE_ID
+        ) PP
+        ON PP.PROCESS_ID = PROCESS_EVENTS.PROCESS_ID
+        WHERE ? <= (STARTTIME + DURATION)
+        AND   DURATION  >= ?
+        AND   STARTTIME <= ?|] (trace_id, start, minduration, end)
+    return evs
 {-
  - EVENT INFO SECTION
  - returns the entire trace structure as a tree, without any events.
