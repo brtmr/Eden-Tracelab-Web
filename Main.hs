@@ -46,6 +46,7 @@ main = do
             file "./view/js/data.js"
         --css
         get "/css/style.css" $ do
+            addHeader "Content-type" "text/css"
             file "./view/css/style.css"
         --favicons
         get "/img/favicon-96x96.png" $ do
@@ -60,6 +61,9 @@ main = do
         get "/img/favicon-32x32.png" $ do
             addHeader "Content-type" "image/png"
             file "./view/img/favicon-32x32.png"
+        get "/img/favicon-128.png" $ do
+            addHeader "Content-type" "image/png"
+            file "./view/img/favicon-128.png"
         get "/img/loading.gif" $ do
             addHeader "Content-type" "image/gif"
             file "./view/img/loading.gif"
