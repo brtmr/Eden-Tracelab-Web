@@ -26,7 +26,6 @@ executable web-backend
                        postgresql-simple == 0.4.1.0,
                        text,
                        mtl==2.2.1,
-                       aeson,
-                       seqparse
+                       aeson
   -- hs-source-dirs:      
   default-language:    Haskell2010

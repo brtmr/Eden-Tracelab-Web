@@ -3,7 +3,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 {- Backend for retrieving trace data from the database. -}
-import Bachelor.Types
 import Control.Monad
 import Control.Monad.Trans (liftIO)
 import Data.List
@@ -67,6 +66,9 @@ main = do
         get "/img/loading.gif" $ do
             addHeader "Content-type" "image/gif"
             file "./view/img/loading.gif"
+        get "/img/loading.png" $ do
+            addHeader "Content-type" "image/png"
+            file "./view/img/loading.png"
 
         --JSON API.
         post "/traces" $ do
