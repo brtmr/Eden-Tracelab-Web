@@ -157,8 +157,7 @@ $ ->
     )
 
     $("#tview").click(() ->
-        if trace_loaded
-            switch_view(THREAD_VIEW)
+        alert "not yet implemented! sorry."
     )
 
     mk_height = (n) ->
@@ -195,8 +194,8 @@ $ ->
 
         tick_format = (ns) ->
             s = ns / 1000000000
-            prefix =  d3.formatPrefix(s)
-            return '' + s + prefix.symbol + 's'
+            #prefix =  d3.formatPrefix(s)
+            return '' + s + 's'
 
         xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(10).tickFormat(tick_format)
 
