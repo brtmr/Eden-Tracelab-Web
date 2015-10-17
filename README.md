@@ -4,7 +4,7 @@ The web application for for Eden-Tracelab as documented in my
 [Bachelor thesis](http://brtmr.de/assets/files/bachelor_cs.pdf).
 
 
-![](http://localhost:4000/assets/img/ui.png)
+![](http://brtmr.de/assets/img/ui.png)
 
 ## Usage 
 
