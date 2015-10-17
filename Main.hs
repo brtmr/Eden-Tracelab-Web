@@ -12,6 +12,7 @@ import Database.PostgreSQL.Simple.SqlQQ
 import Database.PostgreSQL.Simple.Time
 import Network.Wai.Middleware.RequestLogger
 import Web.Scotty
+import qualified Data.ByteString as B
 import qualified Data.Text as Text
 
 import Data.Aeson.Types (ToJSON, (.=), object, toJSON)
@@ -21,13 +22,9 @@ type ThreadId  = Int
 type MachineId = Int
 type ProcessId = Int
 
-myConnectInfo :: ConnectInfo
-myConnectInfo = defaultConnectInfo {
-    connectPassword = "bohCh0mu"
-    }
-
 main = do
-    conn <- connect myConnectInfo
+    connectionString <- B.readFile "pq.conf"
+    conn <- connectPostgreSQL connectionString
     scotty 3000 $ do
         middleware logStdoutDev
         --for serving the view
